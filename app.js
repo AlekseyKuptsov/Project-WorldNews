@@ -5,6 +5,9 @@ function customHttp() {
       try {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url);
+        xhr.setRequestHeader("X-BingApis-SDK", "true");
+        xhr.setRequestHeader("X-RapidAPI-Key", "5cc34e80eemsh26dfb20985835dep191769jsn1d72fa849e75");
+        xhr.setRequestHeader("X-RapidAPI-Host", "bing-news-search1.p.rapidapi.com");
         xhr.addEventListener('load', () => {
           if (Math.floor(xhr.status / 100) !== 2) {
             cb(`Error. Status code: ${xhr.status}`, xhr);
@@ -56,13 +59,12 @@ function customHttp() {
 }
 
 //Elements
-const category = ['business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology'];
+const category = ['Business', 'Entertainment', 'World', 'Politics', 'ScienceAndTechnology', 'Sports', ];
 const countries = {
   us: 'United States',
-  fr: 'France',
+  au: 'Australia',
   gb: 'Great Britain',
-  it: 'Italy',
-  ru: 'Russia',
+  ca: 'Canada',
 };
 const countryArr = Object.entries(countries);
 const form = document.forms.newsControls;
@@ -82,15 +84,15 @@ form.addEventListener('submit', (e) => {
 const http = customHttp();
 
 const newsService = (function() {
-  const apiKey = '04c2add769bc46d1a9840d800dc191af';
-  const apiUrl = 'http://newsapi.org/v2';
+  // const apiKey = '04c2add769bc46d1a9840d800dc191af';
+  const apiUrl = 'https://bing-news-search1.p.rapidapi.com/';
 
   return {
     topHeadlines(country = 'us', category = 'technology', cb) {
-      http.get(`${apiUrl}/top-headlines?country=${country}&category=${category}&apiKey=${apiKey}`, cb);
+      http.get(`${apiUrl}news?count=50&offset=0&originalImg=true&category=${category}&cc=${country}&safeSearch=Off&textFormat=Raw`, cb);
     },
     everything(query, cb) {
-      http.get(`${apiUrl}/everything?q=${query}&apiKey=${apiKey}`, cb);
+      http.get(`${apiUrl}news/search?q=${query}&count=50&cc=gb&freshness=Day&originalImg=true&textFormat=Raw&safeSearch=Off`, cb);
     }
   };
 })();
@@ -126,12 +128,12 @@ function onGetResponse(err, res) {
     return;
   }
 
-  if (!res.articles.length) {
+  if (!res.value.length) {
     //show empty message
     return;
   }
 
-  renderNews(res.articles);
+  renderNews(res.value);
 }
 
 // Function render news
@@ -160,14 +162,15 @@ function clearContainer(container) {
 }
 
 // NewsItem template function
-function newsTemplate({ urlToImage, title, url, description }) {
-  const altImg = 'https://cdn.pixabay.com/photo/2015/02/22/17/56/loading-645268_960_720.jpg';
+function newsTemplate({ image, name, url, description }) {
+  // console.log(image.thumbnail.contentUrl);
+  const altImg = 'https://images.unsplash.com/photo-1607434472257-d9f8e57a643d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2072&q=80';
   return `
     <div class="col s12">
       <div class="card">
         <div class="card-image">
-          <img src="${urlToImage}" onerror="src='${altImg}';">
-          <span class="card-title">${title || ''}</span>
+          <img src="${image ? (image.thumbnail.contentUrl + 'jpg') : altImg}" onerror="src='${altImg}';">
+          <span class="card-title">${name || ''}</span>
         </div>
         <div class="card-content">
           <p>${description || ''}</p>

@@ -12,6 +12,24 @@
 
 .news-container .grid-container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-auto-flow: dense;
+}
+
+.card-image {
+  height: 250px;
+}
+
+.card-image img {
+  height: 250px;
+  object-fit: cover;
+}
+
+.card-content {
+  min-height: 200px;
+}
+
+.nav-wrapper {
+  display: flex;
+  justify-content: center;
 }
