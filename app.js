@@ -66,14 +66,27 @@ const countries = {
   gb: 'Great Britain',
   ca: 'Canada',
 };
-const countryArr = Object.entries(countries);
+const coutryCategory = {
+  Australia: {
+    code: 'au',
+    category: ['Australia', 'Business', 'Entertainment', 'Politics', 'Sports', 'World']
+  },
+  Canada: {
+    code: 'ca',
+    category: ['Business', 'Canada', 'Entertainment', 'LifeStyle', 'Politics', 'ScienceAndTechnology', 'Sports', 'World']
+  }
+};
+const countriesArr = Object.entries(coutryCategory);
+
+console.log(countriesArr);
+// const countryArr = Object.entries(countries);
 const form = document.forms.newsControls;
 const countrySelect = document.querySelector('#country');
 const searchInput = document.querySelector('#autocomplete-input');
 const categorySelect = document.querySelector('#category');
 
-inputChoose(category, categorySelect, categoryTemplate);
-inputChoose(countryArr, countrySelect, countryTemplate);
+inputChooseCategory(countriesArr, categorySelect, categoryTemplate);
+inputChooseCountry(countriesArr, countrySelect, countryTemplate);
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -88,7 +101,7 @@ const newsService = (function() {
   const apiUrl = 'https://bing-news-search1.p.rapidapi.com/';
 
   return {
-    topHeadlines(country = 'us', category = 'technology', cb) {
+    topHeadlines(country = 'us', category = 'Business', cb) {
       http.get(`${apiUrl}news?count=50&offset=0&originalImg=true&category=${category}&cc=${country}&safeSearch=Off&textFormat=Raw`, cb);
     },
     everything(query, cb) {
@@ -101,6 +114,13 @@ const newsService = (function() {
 document.addEventListener('DOMContentLoaded', function() {
   M.AutoInit();
   loadNews();
+  const input = document.querySelector('.input-field')
+  input.querySelectorAll('span').forEach(value => {
+    value.addEventListener('click', (e) => {
+      let value = e.target.textContent;
+      let category = countriesArr.filter((item) => item[0] == value);
+    })
+  })
 });
 
 // Load news function
@@ -205,7 +225,7 @@ function removeLoader() {
 }
 
 //input choose
-function inputChoose(select, container, template) {
+function inputChooseCountry(select, container, template) {
   let fragment = '';
 
   select.forEach(value => {
@@ -215,14 +235,28 @@ function inputChoose(select, container, template) {
   container.insertAdjacentHTML('afterbegin', fragment);
 }
 
+function inputChooseCategory(select, container, template) {
+  let fragment = '';
+
+  select.forEach(value => {
+    // console.log(value);
+    value[1].category.forEach(item => {
+      console.log(item)
+      fragment += template(item);
+    })
+  });
+  container.insertAdjacentHTML('afterbegin', fragment);
+}
+
 function categoryTemplate(item) {
+  item[0]
   return `
     <option value="${item}">${item[0].toUpperCase() + item.substring(1)}</option>
   `;
 }
 
-function countryTemplate([ key, item ]) {
+function countryTemplate([ key, items ]) {
   return `
-    <option value="${key}">${item}</option>
+    <option value="${items.code}">${key}</option>
   `;
 }
