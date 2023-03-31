@@ -129,16 +129,26 @@ const newsService = (function() {
 document.addEventListener('DOMContentLoaded', function() {
   M.AutoInit();
   loadNews(true);
-  const input = document.querySelector('.input-field');
-  input.querySelectorAll('span').forEach(value => {
-    value.classList.add('no-autoinit');
+  const input = document.querySelectorAll('.input-field');
+  input[0].querySelectorAll('span').forEach(value => {
     value.addEventListener('click', (e) => {
+      searchInput.value = '';
       let value = e.target.textContent;
       let category = countriesArr.filter((item) => item[0] == value);
       inputChoose(category[0][1].category, categorySelect, categoryTemplate);
       M.FormSelect.init(document.querySelector('#category'));
-    })
-  })
+      input[1].querySelectorAll('span').forEach(value => {
+        value.addEventListener('click', (e) => {
+          searchInput.value = '';
+        });
+      });
+    });
+  });
+  input[1].querySelectorAll('span').forEach(value => {
+    value.addEventListener('click', (e) => {
+      searchInput.value = '';
+    });
+  });
 });
 
 // Load news function
