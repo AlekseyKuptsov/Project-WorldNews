@@ -1,5 +1,6 @@
 .news-container .card-title {
   background: rgba(0, 0, 0, 0.7);
+  width: 100%;
 }
 .progress {
   position: fixed;
@@ -25,9 +26,9 @@
   object-fit: cover;
 }
 
-.card-content {
+/* .card-content {
   min-height: 200px;
-}
+} */
 
 .nav-wrapper {
   display: flex;

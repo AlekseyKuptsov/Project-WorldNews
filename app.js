@@ -1,7 +1,7 @@
 // Custom Http Module
 function customHttp() {
   return {
-    get(url, cb) {
+    get(url, cb, trends) {
       try {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url);
@@ -14,8 +14,8 @@ function customHttp() {
             return;
           }
           const response = JSON.parse(xhr.responseText);
-          console.log(response);
-          cb(null, response);
+          // console.log(response);
+          cb(null, response, trends);
         });
 
         xhr.addEventListener('error', () => {
@@ -59,14 +59,8 @@ function customHttp() {
 }
 
 //Elements
-const category = ['Business', 'Entertainment', 'World', 'Politics', 'ScienceAndTechnology', 'Sports', ];
-const countries = {
-  us: 'United States',
-  au: 'Australia',
-  gb: 'Great Britain',
-  ca: 'Canada',
-};
-const coutryCategory = {
+
+const countryCategory = {
   Australia: {
     code: 'au',
     category: ['Australia', 'Business', 'Entertainment', 'Politics', 'Sports', 'World']
@@ -74,19 +68,37 @@ const coutryCategory = {
   Canada: {
     code: 'ca',
     category: ['Business', 'Canada', 'Entertainment', 'LifeStyle', 'Politics', 'ScienceAndTechnology', 'Sports', 'World']
+  },
+  China: {
+    code: 'cn',
+    category: ['Auto', 'Business', 'China', 'Education', 'Entertainment', 'Military', 'RealEstate', 'ScienceAndTechnology', 'Society', 'Sports', 'World']
+  },
+  India: {
+    code: 'in',
+    category: ['Business', 'India', 'Entertainment', 'LifeStyle', 'Politics', 'ScienceAndTechnology', 'Sports', 'World']
+  },
+  'United Kingdom': {
+    code: 'gb',
+    category: ['Business', 'Entertainment', 'Health', 'Politics', 'ScienceAndTechnology', 'Sports', 'UK', 'World']
+  },
+  Japan: {
+    code: 'jp',
+    category: ['Business', 'Japan', 'Entertainment', 'LifeStyle', 'Politics', 'ScienceAndTechnology', 'Sports', 'World']
+  },
+  'United States': {
+    code: 'us',
+    category: ['Business', 'Entertainment', 'Health', 'Politics', 'Products', 'Science', 'Technology', 'Sports', 'World', 'US'
+    ]
   }
 };
-const countriesArr = Object.entries(coutryCategory);
-
-console.log(countriesArr);
-// const countryArr = Object.entries(countries);
+const countriesArr = Object.entries(countryCategory);
 const form = document.forms.newsControls;
 const countrySelect = document.querySelector('#country');
 const searchInput = document.querySelector('#autocomplete-input');
 const categorySelect = document.querySelector('#category');
 
-inputChooseCategory(countriesArr, categorySelect, categoryTemplate);
-inputChooseCountry(countriesArr, countrySelect, countryTemplate);
+inputChoose(countriesArr[0][1].category, categorySelect, categoryTemplate);
+inputChoose(countriesArr, countrySelect, countryTemplate);
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -101,46 +113,54 @@ const newsService = (function() {
   const apiUrl = 'https://bing-news-search1.p.rapidapi.com/';
 
   return {
-    topHeadlines(country = 'us', category = 'Business', cb) {
-      http.get(`${apiUrl}news?count=50&offset=0&originalImg=true&category=${category}&cc=${country}&safeSearch=Off&textFormat=Raw`, cb);
+    selectedNews(country = 'us', category = 'Business', cb) {
+      http.get(`${apiUrl}news?count=50&offset=0&originalImg=true&category=${category}&cc=${country}&safeSearch=Off&textFormat=Raw`, cb, false);
     },
-    everything(query, cb) {
-      http.get(`${apiUrl}news/search?q=${query}&count=50&cc=gb&freshness=Day&originalImg=true&textFormat=Raw&safeSearch=Off`, cb);
-    }
+    searchNews(query, cb) {
+      http.get(`${apiUrl}news/search?q=${query}&count=50&cc=gb&freshness=Day&originalImg=true&textFormat=Raw&safeSearch=Off`, cb, false);
+    },
+    topHeadlines(cb) {
+      http.get(`${apiUrl}news/trendingtopics?setLang=EN&mkt=en-US&textFormat=Raw&safeSearch=Off`, cb, true);
+    },
   };
 })();
 
 //  init selects
 document.addEventListener('DOMContentLoaded', function() {
   M.AutoInit();
-  loadNews();
-  const input = document.querySelector('.input-field')
+  loadNews(true);
+  const input = document.querySelector('.input-field');
   input.querySelectorAll('span').forEach(value => {
+    value.classList.add('no-autoinit');
     value.addEventListener('click', (e) => {
       let value = e.target.textContent;
       let category = countriesArr.filter((item) => item[0] == value);
+      inputChoose(category[0][1].category, categorySelect, categoryTemplate);
+      M.FormSelect.init(document.querySelector('#category'));
     })
   })
 });
 
 // Load news function
 
-function loadNews() {
+function loadNews(trends) {
   const country = countrySelect.value;
   const category = categorySelect.value;
   const searchText = searchInput.value;
 
   showLoader();
 
-  if (!searchText) {
-    newsService.topHeadlines(country, category, onGetResponse);
-  } else {
-    newsService.everything(searchText, onGetResponse);
+  if (!searchText && !trends) {
+    newsService.selectedNews(country, category, onGetResponse);
+  } else if (!trends) {
+    newsService.searchNews(searchText, onGetResponse);
+  } else if (trends) {
+    newsService.topHeadlines(onGetResponse);
   }
 }
 
 // function on get response from server
-function onGetResponse(err, res) {
+function onGetResponse(err, res, trends) {
   removeLoader();
 
   if (err) {
@@ -153,18 +173,24 @@ function onGetResponse(err, res) {
     return;
   }
 
-  renderNews(res.value);
+  if(trends) {
+    renderNews(res.value, trendsTemplate);
+  }
+  if (!trends) {
+    renderNews(res.value, newsTemplate);
+  }
+  
 }
 
 // Function render news
-function renderNews(news) {
+function renderNews(news, template) {
   const newsContainer = document.querySelector('.news-container .row');
   if (newsContainer.children.length) {
     clearContainer(newsContainer);
   }
   let fragment = '';
   news.forEach(newsItem => {
-    const el = newsTemplate(newsItem);
+    const el = template(newsItem);
     fragment += el;
   });
 
@@ -183,20 +209,39 @@ function clearContainer(container) {
 
 // NewsItem template function
 function newsTemplate({ image, name, url, description }) {
-  // console.log(image.thumbnail.contentUrl);
   const altImg = 'https://images.unsplash.com/photo-1607434472257-d9f8e57a643d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2072&q=80';
   return `
     <div class="col s12">
       <div class="card">
         <div class="card-image">
-          <img src="${image ? (image.thumbnail.contentUrl + 'jpg') : altImg}" onerror="src='${altImg}';">
+          <img src="${image ? (image.thumbnail.contentUrl + '.jpg') : altImg}" onerror="src='${altImg}';">
           <span class="card-title">${name || ''}</span>
         </div>
         <div class="card-content">
           <p>${description || ''}</p>
         </div>
         <div class="card-action">
-          <a href="${url}">Read more</a>
+          <a href="${url}" target="_blank">Read more</a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function trendsTemplate({ image, name, newsSearchUrl, query }) {
+  const altImg = 'https://images.unsplash.com/photo-1607434472257-d9f8e57a643d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2072&q=80';
+  return `
+    <div class="col s12">
+      <div class="card">
+        <div class="card-image">
+          <img src="${image ? (image.url + '.jpg') : altImg}" onerror="src='${altImg}';">
+          <span class="card-title">${name || ''}</span>
+        </div>
+        <div class="card-content">
+          <p>${query.text || ''}</p>
+        </div>
+        <div class="card-action">
+          <a href="${newsSearchUrl}" target="_blank">Read more</a>
         </div>
       </div>
     </div>
@@ -225,38 +270,37 @@ function removeLoader() {
 }
 
 //input choose
-function inputChooseCountry(select, container, template) {
-  let fragment = '';
-
+function inputChoose(select, container, template) {
+  container.innerHTML = '';
   select.forEach(value => {
-    fragment += template(value);
+    container.appendChild(template(value));
   });
-
-  container.insertAdjacentHTML('afterbegin', fragment);
 }
 
-function inputChooseCategory(select, container, template) {
-  let fragment = '';
-
-  select.forEach(value => {
-    // console.log(value);
-    value[1].category.forEach(item => {
-      console.log(item)
-      fragment += template(item);
-    })
-  });
-  container.insertAdjacentHTML('afterbegin', fragment);
-}
+// function inputChooseCategory(select, container, template) {
+//   container.innerHTML = '';
+//   select.forEach(value => {
+//     container.appendChild(template(value));
+//   });
+// }
 
 function categoryTemplate(item) {
-  item[0]
-  return `
-    <option value="${item}">${item[0].toUpperCase() + item.substring(1)}</option>
-  `;
+  const option = document.createElement('option');
+  option.setAttribute('value', item);
+  option.textContent = item;
+  return option;
+
 }
 
 function countryTemplate([ key, items ]) {
-  return `
-    <option value="${items.code}">${key}</option>
-  `;
+  const option = document.createElement('option');
+  option.setAttribute('value', items.code);
+  option.textContent = key;
+  return option;
 }
+
+// function countryTemplate([key, items]) {
+//   return `
+//     <option value="${items.code}">${key}</option>
+//   `;
+// }
